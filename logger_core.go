@@ -2,10 +2,21 @@ package lightlog
 
 import (
 	"fmt"
-	"path/filepath"
-	"runtime"
+	"os"
 	"time"
 )
+
+var pid int
+var ip, ipv4, ipv6 string
+
+func init() {
+	pid = os.Getpid()
+	ipv4, ipv6 = GetIPAddresses()
+	ip = ipv4
+	if ip == "" {
+		ip = ipv6
+	}
+}
 
 type Level int
 
@@ -29,7 +40,7 @@ type LogData struct {
 	levelStr  string
 	time      time.Time
 	timestamp int64
-	pid       int32
+	pid       int
 	datetime  string
 	ipv4      string
 	ipv6      string
@@ -134,31 +145,17 @@ func (l *LoggerCore) Log(level Level, format string, v ...interface{}) {
 	message := fmt.Sprintf(format, v...)
 	now := time.Now()
 
-	_, file, line, ok := runtime.Caller(2)
-	if !ok {
-		file = "???"
-		line = 0
-	} else {
-		file = filepath.Base(file)
-	}
-	location := fmt.Sprintf("%s:%d", file, line)
-	ipv4, ipv6 := GetIPAddresses()
-	ip := ipv4
-	if ip == "" {
-		ip = ipv6
-	}
-
 	log := &LogData{
 		level:     level,
 		levelStr:  levelStr,
 		time:      now,
 		timestamp: now.UnixMilli(),
 		datetime:  now.Format("2006-01-02 15:04:05"),
-		pid:       0,
+		pid:       pid,
 		ip:        ip,
 		ipv4:      ipv4,
 		ipv6:      ipv6,
-		location:  location,
+		location:  GetLocation(),
 		message:   message,
 		stack:     "",
 		logId:     "",
