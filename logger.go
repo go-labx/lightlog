@@ -11,11 +11,20 @@ type LoggerOptions struct {
 }
 
 func NewLogger(options *LoggerOptions) *Logger {
+	if options.name == "" {
+		options.name = "defaultLogger"
+	}
+
 	logger := &Logger{
 		NewLoggerCore(options.name, options.level),
 	}
 	logger.AddTransport("defaultConsoleTransport", NewConsoleTransport("defaultConsoleTransport", options.level))
-	logger.AddTransport("defaultFileTransport", NewFileTransport("defaultFileTransport", options.level, options.filepath))
+
+	if options.filepath == "" {
+		logger.Warn("`options.filepath` cannot be empty")
+	} else {
+		logger.AddTransport("defaultFileTransport", NewFileTransport("defaultFileTransport", options.level, options.filepath))
+	}
 
 	return logger
 }

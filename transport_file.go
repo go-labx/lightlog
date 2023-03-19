@@ -6,6 +6,7 @@ import (
 	"os"
 )
 
+// FileTransport is a struct that represents a transport for logging to a file.
 type FileTransport struct {
 	*Transport
 	filepath string
@@ -13,6 +14,7 @@ type FileTransport struct {
 	writer   *bufio.Writer
 }
 
+// NewFileTransport is a constructor function that creates a new instance of FileTransport.
 func NewFileTransport(name string, level Level, filepath string) *FileTransport {
 	file, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
@@ -30,14 +32,18 @@ func NewFileTransport(name string, level Level, filepath string) *FileTransport 
 	}
 }
 
+// Log is a method that writes formattedData to the file.
 func (f *FileTransport) Log(formattedData string, _ *LogData) {
 	_, err := f.writer.WriteString(formattedData)
+	_, err = f.writer.WriteString("\n")
+
 	if err != nil {
 		fmt.Println("Error writing string:", err)
 		return
 	}
 }
 
+// Flush is a method that flushes the writer's buffer to the file.
 func (f *FileTransport) Flush() {
 	defer func(writer *bufio.Writer) {
 		err := writer.Flush()
@@ -47,6 +53,7 @@ func (f *FileTransport) Flush() {
 	}(f.writer)
 }
 
+// FlushSync is a method that synchronously flushes the writer's buffer to the file.
 func (f *FileTransport) FlushSync() {
 	err := f.writer.Flush()
 	if err != nil {
@@ -55,6 +62,7 @@ func (f *FileTransport) FlushSync() {
 	}
 }
 
+// Reload is a method that flushes the writer's buffer to the file, reloads the file, and closes the old file.
 func (f *FileTransport) Reload() {
 	f.FlushSync()
 
@@ -68,6 +76,7 @@ func (f *FileTransport) Reload() {
 	f.file = file
 }
 
+// Close is a method that flushes the writer's buffer to the file and closes the file.
 func (f *FileTransport) Close() {
 	f.FlushSync()
 

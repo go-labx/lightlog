@@ -52,19 +52,37 @@ type LogData struct {
 	tags      map[string]string
 }
 
+//func scheduleFlush(logger *LoggerCore, interval time.Duration) {
+//	ticker := time.NewTicker(interval)
+//	defer ticker.Stop()
+//
+//	for {
+//		select {
+//		case <-ticker.C:
+//			logger.Flush()
+//		}
+//	}
+//}
+
 func NewLoggerCore(name string, level Level) *LoggerCore {
-	return &LoggerCore{
+	logger := &LoggerCore{
 		name:       name,
 		level:      level,
 		transports: make(map[string]ITransport, 0),
 	}
+
+	//go scheduleFlush(logger, time.Second*3)
+
+	return logger
 }
 
 func (l *LoggerCore) AddTransport(name string, transport ITransport) {
 	if l.GetTransport(name) != nil {
-		panic(fmt.Sprintf("transport %s already exists!", name))
+		panic(fmt.Sprintf("transport %s has already exists!", name))
 	}
-	l.transports[name] = transport
+	if transport != nil {
+		l.transports[name] = transport
+	}
 }
 
 func (l *LoggerCore) GetTransport(name string) ITransport {
@@ -132,7 +150,6 @@ func (l *LoggerCore) FlushSync() {
 }
 
 func (l *LoggerCore) Close() {
-	l.FlushSync()
 	l.CloseAllTransport()
 }
 
@@ -141,7 +158,7 @@ func (l *LoggerCore) Log(level Level, format string, v ...interface{}) {
 		return
 	}
 
-	levelStr := []string{"TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"}[level]
+	levelStr := []string{"TRACE", "DEBUG", "INFO ", "WARN ", "ERROR", "FATAL"}[level]
 	message := fmt.Sprintf(format, v...)
 	now := time.Now()
 
@@ -161,10 +178,12 @@ func (l *LoggerCore) Log(level Level, format string, v ...interface{}) {
 		logId:     "",
 		tags:      make(map[string]string),
 	}
-	logMsg := fmt.Sprintf("%s %s %s %s %s", log.levelStr, log.datetime, log.location, log.ip, log.message)
+	logMsg := fmt.Sprintf("%s %s %s %s: %s", log.levelStr, log.datetime, log.ip, log.location, log.message)
 
 	for _, transport := range l.transports {
-		transport.Log(logMsg, log)
+		if transport.ShouldLog(level) {
+			transport.Log(logMsg, log)
+		}
 	}
 }
 

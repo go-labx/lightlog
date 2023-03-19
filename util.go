@@ -7,6 +7,7 @@ import (
 	"runtime"
 )
 
+// GetIPAddresses This function returns the IP addresses of the current machine.
 func GetIPAddresses() (ipv4 string, ipv6 string) {
 	adds, _ := net.InterfaceAddrs()
 	for _, addr := range adds {
@@ -21,8 +22,9 @@ func GetIPAddresses() (ipv4 string, ipv6 string) {
 	return ipv4, ipv6
 }
 
+// GetLocation returns the file name and line number of the caller of the method that called
 func GetLocation() string {
-	_, file, line, ok := runtime.Caller(2)
+	_, file, line, ok := runtime.Caller(3)
 	if !ok {
 		file = "???"
 		line = 0
@@ -30,6 +32,5 @@ func GetLocation() string {
 		file = filepath.Base(file)
 	}
 	location := fmt.Sprintf("%s:%d", file, line)
-
 	return location
 }
