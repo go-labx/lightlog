@@ -5,25 +5,25 @@ type Logger struct {
 }
 
 type LoggerOptions struct {
-	name     string
-	level    Level
-	filepath string
+	Name     string
+	Level    Level
+	Filepath string
 }
 
 func NewLogger(options *LoggerOptions) *Logger {
-	if options.name == "" {
-		options.name = "defaultLogger"
+	if options.Name == "" {
+		options.Name = "defaultLogger"
 	}
 
 	logger := &Logger{
-		NewLoggerCore(options.name, options.level),
+		NewLoggerCore(options.Name, options.Level),
 	}
-	logger.AddTransport("defaultConsoleTransport", NewConsoleTransport("defaultConsoleTransport", options.level))
+	logger.AddTransport("defaultConsoleTransport", NewConsoleTransport("defaultConsoleTransport", options.Level))
 
-	if options.filepath == "" {
-		logger.Warn("`options.filepath` cannot be empty")
+	if options.Filepath == "" {
+		logger.Warn("`options.Filepath` cannot be empty")
 	} else {
-		logger.AddTransport("defaultFileTransport", NewFileTransport("defaultFileTransport", options.level, options.filepath))
+		logger.AddTransport("defaultFileTransport", NewFileTransport("defaultFileTransport", options.Level, options.Filepath))
 	}
 
 	return logger
