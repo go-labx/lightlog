@@ -52,17 +52,17 @@ type LogData struct {
 	tags      map[string]string
 }
 
-//func scheduleFlush(logger *LoggerCore, interval time.Duration) {
-//	ticker := time.NewTicker(interval)
-//	defer ticker.Stop()
-//
-//	for {
-//		select {
-//		case <-ticker.C:
-//			logger.Flush()
-//		}
-//	}
-//}
+func scheduleFlush(logger *LoggerCore, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			logger.Flush()
+		}
+	}
+}
 
 func NewLoggerCore(name string, level Level) *LoggerCore {
 	logger := &LoggerCore{
@@ -71,7 +71,7 @@ func NewLoggerCore(name string, level Level) *LoggerCore {
 		transports: make(map[string]ITransport, 0),
 	}
 
-	//go scheduleFlush(logger, time.Second*3)
+	go scheduleFlush(logger, 3*time.Second)
 
 	return logger
 }

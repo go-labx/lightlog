@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path"
 )
 
 // FileTransport is a struct that represents a transport for logging to a file.
@@ -16,6 +17,13 @@ type FileTransport struct {
 
 // NewFileTransport is a constructor function that creates a new instance of FileTransport.
 func NewFileTransport(name string, level Level, filepath string) *FileTransport {
+	dirPath := path.Dir(filepath)
+	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+		if err := os.MkdirAll(dirPath, 0755); err != nil {
+			panic(err)
+		}
+	}
+
 	file, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
