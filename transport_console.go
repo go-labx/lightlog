@@ -5,16 +5,19 @@ import (
 	"github.com/go-labx/color"
 )
 
+// ConsoleTransport is a struct that represents a console transport
 type ConsoleTransport struct {
 	*Transport
 }
 
+// NewConsoleTransport creates a new ConsoleTransport instance
 func NewConsoleTransport(name string, level Level) *ConsoleTransport {
 	return &ConsoleTransport{
 		NewTransport(name, level),
 	}
 }
 
+// Log logs the formatted data to the console
 func (c *ConsoleTransport) Log(formattedData string, data *LogData) {
 	switch data.level {
 	case TRACE:
