@@ -36,20 +36,21 @@ type LoggerCore struct {
 }
 
 type LogData struct {
-	level     Level
-	levelStr  string
-	time      time.Time
-	timestamp int64
-	pid       int
-	datetime  string
-	ipv4      string
-	ipv6      string
-	ip        string
-	location  string
-	message   string
-	stack     string
-	logId     string
-	tags      map[string]string
+	level            Level
+	levelText        string
+	time             time.Time
+	timestamp        int64
+	datetime         string
+	pid              int
+	ip               string
+	ipv4             string
+	ipv6             string
+	location         string
+	message          string
+	formattedMessage string
+	stack            string
+	logId            string
+	tags             map[string]string
 }
 
 // scheduleFlush schedules the logger to flush at a given interval
@@ -171,7 +172,7 @@ func (l *LoggerCore) Log(level Level, format string, v ...interface{}) {
 
 	log := &LogData{
 		level:     level,
-		levelStr:  levelStr,
+		levelText: levelStr,
 		time:      now,
 		timestamp: now.UnixMilli(),
 		datetime:  now.Format("2006-01-02 15:04:05"),
@@ -185,11 +186,12 @@ func (l *LoggerCore) Log(level Level, format string, v ...interface{}) {
 		logId:     "",
 		tags:      make(map[string]string),
 	}
-	logMsg := fmt.Sprintf("%s %s %s %s: %s", log.levelStr, log.datetime, log.ip, log.location, log.message)
+	logMsg := fmt.Sprintf("%s %s %s %s: %s", log.levelText, log.datetime, log.ip, log.location, log.message)
+	log.formattedMessage = logMsg
 
 	for _, transport := range l.transports {
 		if transport.ShouldLog(level) {
-			transport.Log(logMsg, log)
+			transport.Log(log)
 		}
 	}
 }

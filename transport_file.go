@@ -41,8 +41,8 @@ func NewFileTransport(name string, level Level, filepath string) *FileTransport 
 }
 
 // Log is a method that writes formattedData to the file.
-func (f *FileTransport) Log(formattedData string, _ *LogData) {
-	_, err := f.writer.WriteString(formattedData)
+func (f *FileTransport) Log(data *LogData) {
+	_, err := f.writer.WriteString(data.formattedMessage)
 	_, err = f.writer.WriteString("\n")
 
 	if err != nil {

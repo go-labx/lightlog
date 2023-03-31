@@ -18,19 +18,19 @@ func NewConsoleTransport(name string, level Level) *ConsoleTransport {
 }
 
 // Log logs the formatted data to the console
-func (c *ConsoleTransport) Log(formattedData string, data *LogData) {
+func (c *ConsoleTransport) Log(data *LogData) {
 	switch data.level {
 	case TRACE:
-		fmt.Println(color.CyanString(formattedData))
+		fmt.Println(color.CyanString(data.formattedMessage))
 	case DEBUG:
-		fmt.Println(color.BlueString(formattedData))
+		fmt.Println(color.BlueString(data.formattedMessage))
 	case INFO:
-		fmt.Println(color.GreenString(formattedData))
+		fmt.Println(color.GreenString(data.formattedMessage))
 	case WARN:
-		fmt.Println(color.YellowString(formattedData))
+		fmt.Println(color.YellowString(data.formattedMessage))
 	case ERROR, FATAL:
-		fmt.Println(color.RedString(formattedData))
+		fmt.Println(color.RedString(data.formattedMessage))
 	default:
-		fmt.Println(formattedData)
+		fmt.Println(data.formattedMessage)
 	}
 }

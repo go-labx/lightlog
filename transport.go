@@ -5,7 +5,7 @@ type ITransport interface {
 	Enable()
 	Disable()
 	ShouldLog(level Level) bool
-	Log(formattedData string, data *LogData)
+	Log(data *LogData)
 	Flush()
 	FlushSync()
 	Reload()
