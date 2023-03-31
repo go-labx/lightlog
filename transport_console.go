@@ -17,20 +17,24 @@ func NewConsoleTransport(name string, level Level) *ConsoleTransport {
 	}
 }
 
+func (c *ConsoleTransport) log(level Level, message string) {
+	switch level {
+	case TRACE:
+		fmt.Println(color.CyanString(message))
+	case DEBUG:
+		fmt.Println(color.BlueString(message))
+	case INFO:
+		fmt.Println(color.GreenString(message))
+	case WARN:
+		fmt.Println(color.YellowString(message))
+	case ERROR, FATAL:
+		fmt.Println(color.RedString(message))
+	default:
+		fmt.Println(message)
+	}
+}
+
 // Log logs the formatted data to the console
 func (c *ConsoleTransport) Log(data *LogData) {
-	switch data.level {
-	case TRACE:
-		fmt.Println(color.CyanString(data.formattedMessage))
-	case DEBUG:
-		fmt.Println(color.BlueString(data.formattedMessage))
-	case INFO:
-		fmt.Println(color.GreenString(data.formattedMessage))
-	case WARN:
-		fmt.Println(color.YellowString(data.formattedMessage))
-	case ERROR, FATAL:
-		fmt.Println(color.RedString(data.formattedMessage))
-	default:
-		fmt.Println(data.formattedMessage)
-	}
+	c.log(data.level, data.formattedMessage)
 }
