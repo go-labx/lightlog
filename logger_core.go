@@ -11,7 +11,7 @@ var ip, ipv4, ipv6 string
 
 func init() {
 	pid = os.Getpid()
-	ipv4, ipv6 = GetIPAddresses()
+	ipv4, ipv6 = getIPAddresses()
 	ip = ipv4
 	if ip == "" {
 		ip = ipv6
@@ -36,39 +36,39 @@ type LoggerCore struct {
 }
 
 type LogData struct {
-	level     Level
-	levelStr  string
-	time      time.Time
-	timestamp int64
-	pid       int
-	datetime  string
-	ipv4      string
-	ipv6      string
-	ip        string
-	location  string
-	message   string
-	stack     string
-	logId     string
-	tags      map[string]string
+	level            Level
+	levelText        string
+	time             time.Time
+	timestamp        int64
+	datetime         string
+	pid              int
+	ip               string
+	ipv4             string
+	ipv6             string
+	location         string
+	message          string
+	formattedMessage string
+	stack            string
+	logId            string
+	tags             map[string]string
 }
 
+// scheduleFlush schedules the logger to flush at a given interval
 func scheduleFlush(logger *LoggerCore, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			logger.Flush()
-		}
+	for range ticker.C {
+		logger.Flush()
 	}
 }
 
+// NewLoggerCore creates a new LoggerCore instance
 func NewLoggerCore(name string, level Level) *LoggerCore {
 	logger := &LoggerCore{
 		name:       name,
 		level:      level,
-		transports: make(map[string]ITransport, 0),
+		transports: make(map[string]ITransport),
 	}
 
 	go scheduleFlush(logger, 3*time.Second)
@@ -76,6 +76,7 @@ func NewLoggerCore(name string, level Level) *LoggerCore {
 	return logger
 }
 
+// AddTransport adds new transport to the logger
 func (l *LoggerCore) AddTransport(name string, transport ITransport) {
 	if l.GetTransport(name) != nil {
 		panic(fmt.Sprintf("transport %s has already exists!", name))
@@ -85,75 +86,82 @@ func (l *LoggerCore) AddTransport(name string, transport ITransport) {
 	}
 }
 
+// GetTransport returns the transport with the given name
 func (l *LoggerCore) GetTransport(name string) ITransport {
 	return l.transports[name]
 }
 
+// RemoveTransport removes the transport with the given name
 func (l *LoggerCore) RemoveTransport(name string) {
-	transport := l.transports[name]
-	if transport != nil {
+	if transport := l.GetTransport(name); transport != nil {
 		transport.Close()
 		delete(l.transports, name)
 	}
 }
 
+// DisableTransport disables the transport with the given name
 func (l *LoggerCore) DisableTransport(name string) {
-	transport := l.GetTransport(name)
-	if transport != nil {
+	if transport := l.GetTransport(name); transport != nil {
 		transport.Disable()
 	}
 }
 
+// EnableTransport enables the transport with the given name
 func (l *LoggerCore) EnableTransport(name string) {
-	transport := l.GetTransport(name)
-	if transport != nil {
+	if transport := l.GetTransport(name); transport != nil {
 		transport.Enable()
 	}
 }
 
+// ReloadTransport reloads the transport with the given name
 func (l *LoggerCore) ReloadTransport(name string) {
-	transport := l.GetTransport(name)
-	if transport != nil {
+	if transport := l.GetTransport(name); transport != nil {
 		transport.Reload()
 	}
 }
 
+// ReloadAllTransports reloads all transports
 func (l *LoggerCore) ReloadAllTransports() {
 	for _, transport := range l.transports {
 		transport.Reload()
 	}
 }
 
+// CloseTransport closes the transport with the given name
 func (l *LoggerCore) CloseTransport(name string) {
-	transport := l.GetTransport(name)
-	if transport != nil {
+	if transport := l.GetTransport(name); transport != nil {
 		transport.Close()
 	}
 }
 
+// CloseAllTransport closes all transports
 func (l *LoggerCore) CloseAllTransport() {
 	for _, transport := range l.transports {
 		transport.Close()
 	}
 }
 
+// Flush flushes all transports
 func (l *LoggerCore) Flush() {
 	for _, transport := range l.transports {
 		transport.Flush()
 	}
 }
 
+// FlushSync flushes all transports synchronously
 func (l *LoggerCore) FlushSync() {
 	for _, transport := range l.transports {
 		transport.FlushSync()
 	}
 }
 
+// Close closes all transports
 func (l *LoggerCore) Close() {
 	l.CloseAllTransport()
 }
 
-func (l *LoggerCore) Log(level Level, format string, v ...interface{}) {
+// Log logs a message with the given level and format
+func (l *LoggerCore) Log(level Level, tags map[string]string, format string, v ...interface{}) {
 	if level < l.level {
 		return
 	}
@@ -164,7 +172,7 @@ func (l *LoggerCore) Log(level Level, format string, v ...interface{}) {
 
 	log := &LogData{
 		level:     level,
-		levelStr:  levelStr,
+		levelText: levelStr,
 		time:      now,
 		timestamp: now.UnixMilli(),
 		datetime:  now.Format("2006-01-02 15:04:05"),
@@ -172,41 +180,56 @@ func (l *LoggerCore) Log(level Level, format string, v ...interface{}) {
 		ip:        ip,
 		ipv4:      ipv4,
 		ipv6:      ipv6,
-		location:  GetLocation(),
+		location:  getLocation(),
 		message:   message,
 		stack:     "",
 		logId:     "",
-		tags:      make(map[string]string),
+		tags:      tags,
 	}
-	logMsg := fmt.Sprintf("%s %s %s %s: %s", log.levelStr, log.datetime, log.ip, log.location, log.message)
+
+	var logMsg string
+	if log.tags != nil {
+		tagsStr := mapToString(log.tags)
+		logMsg = fmt.Sprintf("%s %s %s %s %s %s", log.levelText, log.datetime, log.ip, log.location, tagsStr, log.message)
+	} else {
+		logMsg = fmt.Sprintf("%s %s %s %s %s", log.levelText, log.datetime, log.ip, log.location, log.message)
+	}
+
+	log.formattedMessage = logMsg
 
 	for _, transport := range l.transports {
 		if transport.ShouldLog(level) {
-			transport.Log(logMsg, log)
+			transport.Log(log)
 		}
 	}
 }
 
+// Trace logs a message with the TRACE level
 func (l *LoggerCore) Trace(format string, v ...interface{}) {
-	l.Log(TRACE, format, v...)
+	l.Log(TRACE, nil, format, v...)
 }
 
+// Debug logs a message with the DEBUG level
 func (l *LoggerCore) Debug(format string, v ...interface{}) {
-	l.Log(DEBUG, format, v...)
+	l.Log(DEBUG, nil, format, v...)
 }
 
+// Info logs a message with the INFO level
 func (l *LoggerCore) Info(format string, v ...interface{}) {
-	l.Log(INFO, format, v...)
+	l.Log(INFO, nil, format, v...)
 }
 
+// Warn logs a message with the WARN level
 func (l *LoggerCore) Warn(format string, v ...interface{}) {
-	l.Log(WARN, format, v...)
+	l.Log(WARN, nil, format, v...)
 }
 
+// Error logs a message with the ERROR level
 func (l *LoggerCore) Error(format string, v ...interface{}) {
-	l.Log(ERROR, format, v...)
+	l.Log(ERROR, nil, format, v...)
 }
 
+// Fatal logs a message with the FATAL level
 func (l *LoggerCore) Fatal(format string, v ...interface{}) {
-	l.Log(FATAL, format, v...)
+	l.Log(FATAL, nil, format, v...)
 }
