@@ -7,7 +7,7 @@ import (
 	"path"
 )
 
-// FileTransport is a struct that represents a transport for logging to a file.
+// FileTransport is a struct that represents transport for logging to a file.
 type FileTransport struct {
 	*Transport
 	filepath string
