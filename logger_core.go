@@ -11,7 +11,7 @@ var ip, ipv4, ipv6 string
 
 func init() {
 	pid = os.Getpid()
-	ipv4, ipv6 = GetIPAddresses()
+	ipv4, ipv6 = getIPAddresses()
 	ip = ipv4
 	if ip == "" {
 		ip = ipv6
@@ -161,7 +161,7 @@ func (l *LoggerCore) Close() {
 }
 
 // Log logs a message with the given level and format
-func (l *LoggerCore) Log(level Level, format string, v ...interface{}) {
+func (l *LoggerCore) Log(level Level, tags map[string]string, format string, v ...interface{}) {
 	if level < l.level {
 		return
 	}
@@ -180,13 +180,21 @@ func (l *LoggerCore) Log(level Level, format string, v ...interface{}) {
 		ip:        ip,
 		ipv4:      ipv4,
 		ipv6:      ipv6,
-		location:  GetLocation(),
+		location:  getLocation(),
 		message:   message,
 		stack:     "",
 		logId:     "",
-		tags:      make(map[string]string),
+		tags:      tags,
 	}
-	logMsg := fmt.Sprintf("%s %s %s %s: %s", log.levelText, log.datetime, log.ip, log.location, log.message)
+
+	var logMsg string
+	if log.tags != nil {
+		tagsStr := mapToString(log.tags)
+		logMsg = fmt.Sprintf("%s %s %s %s %s %s", log.levelText, log.datetime, log.ip, log.location, tagsStr, log.message)
+	} else {
+		logMsg = fmt.Sprintf("%s %s %s %s %s", log.levelText, log.datetime, log.ip, log.location, log.message)
+	}
+
 	log.formattedMessage = logMsg
 
 	for _, transport := range l.transports {
@@ -198,30 +206,30 @@ func (l *LoggerCore) Log(level Level, format string, v ...interface{}) {
 
 // Trace logs a message with the TRACE level
 func (l *LoggerCore) Trace(format string, v ...interface{}) {
-	l.Log(TRACE, format, v...)
+	l.Log(TRACE, nil, format, v...)
 }
 
 // Debug logs a message with the DEBUG level
 func (l *LoggerCore) Debug(format string, v ...interface{}) {
-	l.Log(DEBUG, format, v...)
+	l.Log(DEBUG, nil, format, v...)
 }
 
 // Info logs a message with the INFO level
 func (l *LoggerCore) Info(format string, v ...interface{}) {
-	l.Log(INFO, format, v...)
+	l.Log(INFO, nil, format, v...)
 }
 
 // Warn logs a message with the WARN level
 func (l *LoggerCore) Warn(format string, v ...interface{}) {
-	l.Log(WARN, format, v...)
+	l.Log(WARN, nil, format, v...)
 }
 
 // Error logs a message with the ERROR level
 func (l *LoggerCore) Error(format string, v ...interface{}) {
-	l.Log(ERROR, format, v...)
+	l.Log(ERROR, nil, format, v...)
 }
 
 // Fatal logs a message with the FATAL level
 func (l *LoggerCore) Fatal(format string, v ...interface{}) {
-	l.Log(FATAL, format, v...)
+	l.Log(FATAL, nil, format, v...)
 }
